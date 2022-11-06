@@ -218,6 +218,8 @@ void get_filetype(char *filename, char *filetype)
     strcpy(filetype, "image/png");
   else if(strstr(filename, ".jpg"))
     strcpy(filetype, "image/jpeg");
+  else if(strstr(filename, ".mpg"))
+    strcpy(filetype, "image/mpg");
   else
     strcpy(filetype, "text/plain");
 }
