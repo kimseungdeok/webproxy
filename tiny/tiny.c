@@ -199,10 +199,20 @@ void serve_static(int fd, char *filename, int filesize)
   printf("%s", buf);
 
   srcfd = Open(filename, O_RDONLY, 0);
-  srcp = Mmap(0, filesize, PROT_READ, MAP_PRIVATE, srcfd, 0);
+
+  /* 
+  void * mmap(void *start, size_t length, int prot, int flags, int flides, off_t offset);
+  offset을 시작으로 length바이트 만큼 start(보통 0을 지정, 그 주소를 사용하면 좋겠다 정도)주소로 대응시키도록 한다.
+  */
+  // srcp = Mmap(0, filesize, PROT_READ, MAP_PRIVATE, srcfd, 0); 
+  srcp = (char *) malloc(filesize);
+  // 이 구문에서 rio_readn 함수는 식별자 srcfd의 현재 파일 위치에서 메모리 위치 srcp로 최대 filesize 바이트를 전송한다.
+  Rio_readn(srcfd, srcp, filesize); 
   Close(srcfd);
   Rio_writen(fd, srcp, filesize);
-  Munmap(srcp, filesize);
+  // Munmap(srcp, filesize);
+  free(srcp);
+
 }
 
 /*
