@@ -16,6 +16,7 @@ void get_filetype(char *filename, char *filetype);
 void serve_dynamic(int fd, char *filename, char *cgiargs);
 void clienterror(int fd, char *cause, char *errnum, char *shortmsg,
                  char *longmsg);
+void echo(int connfd);
 /*
 main(argc, argv)
 tiny 함수를 실행할떼 ./tiny 8000 이런식으로 실행한다.
@@ -46,9 +47,24 @@ int main(int argc, char **argv) {
                 0);
     printf("Accepted connection from (%s, %s)\n", hostname, port);
     doit(connfd);   // 트랜잭션 수행
+    // echo(connfd);
     Close(connfd);  // 자신 쪽의 연결 끝을 닫음
   }
 }
+
+void echo(int connfd) {
+  size_t n;
+  char buf[MAXLINE];
+  rio_t rio;
+
+  Rio_readinitb(&rio, connfd);
+  while ((n = Rio_readlineb(&rio, buf, MAXLINE)) != 0) {
+    if (strcmp(buf, "\r\n") == 0)
+      break;
+    Rio_writen(connfd, buf, n);
+  }
+}
+
 
 /*
  doit(fd) : 한 개의 HTTP 트랜잭션을 처리한다.
@@ -71,7 +87,7 @@ void doit(int fd)
   // tiny는 get 메소드만 지원, 
   // 그래서 클라이언트가 다른 메소드(POST)를 요청하면 에러 메시지를 보내고
   // main 루틴으로 돌아오고 그 후에 연결을 닫고 다음 연결 요청을 기다린다.
-  if(strcasecmp(method, "GET")){
+  if(!(strcasecmp(method, "GET")==0 || strcasecmp(method, "HEAD")==0)){
     clienterror(fd, method, "501", "Not implemented",
                 "Tiny does not implement this method");
     return;
