@@ -204,6 +204,7 @@ void serve_static(int fd, char *filename, int filesize)
   Rio_writen(fd, srcp, filesize);
   Munmap(srcp, filesize);
 }
+
 /*
 get_filetype
 파일의 컨텐츠 타입을 확인하는 함수
