@@ -13,7 +13,7 @@ void read_requesthdrs(rio_t *rp);
 int parse_uri(char *uri, char *filename, char *cgiargs);
 void serve_static(int fd, char *filename, int filesize, char *method);
 void get_filetype(char *filename, char *filetype);
-void serve_dynamic(int fd, char *filename, char *cgiargs, char *method);
+void serve_dynamic(int fd, char *filename, char *cgiargs);
 void clienterror(int fd, char *cause, char *errnum, char *shortmsg,
                  char *longmsg);
 void echo(int connfd);
@@ -112,7 +112,7 @@ void doit(int fd)
       clienterror(fd, filename, "403", "Forbidden", "Tiny couldn't run the CGI program");
       return;
     }
-    serve_dynamic(fd, filename, cgiargs, method); // 동적 컨텐츠를 제공
+    serve_dynamic(fd, filename, cgiargs); // 동적 컨텐츠를 제공
   }
 }
 /*
@@ -214,6 +214,7 @@ void serve_static(int fd, char *filename, int filesize, char *method)
   printf("Response headers:\n");
   printf("%s", buf);
 
+  if(strcasecmp(method, "HEAD")==0) return;
   srcfd = Open(filename, O_RDONLY, 0);
 
   /* 
@@ -256,7 +257,7 @@ void get_filetype(char *filename, char *filetype)
 serve_dynamic
 동적 컨텐츠를 자식의 컨텍스트에서 실행할수있도록 해주는 함수이다.
 */
-void serve_dynamic(int fd, char *filename, char *cgiargs, char *method)
+void serve_dynamic(int fd, char *filename, char *cgiargs)
 {
   char buf[MAXLINE], *emptylist[] = { NULL };
 
@@ -267,7 +268,7 @@ void serve_dynamic(int fd, char *filename, char *cgiargs, char *method)
 
   if(Fork() == 0){ // 새로운 자식 프로세스를 fork함
     setenv("QUERY_STRING", cgiargs, 1);
-    setenv("REQUEST_METHOD", method, 1);
+    setenv("REQUEST_METHOD", cgiargs, 1);
     Dup2(fd, STDOUT_FILENO);
     Execve(filename, emptylist, environ);
   }
