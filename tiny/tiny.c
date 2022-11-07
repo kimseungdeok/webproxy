@@ -11,9 +11,9 @@
 void doit(int fd);
 void read_requesthdrs(rio_t *rp);
 int parse_uri(char *uri, char *filename, char *cgiargs);
-void serve_static(int fd, char *filename, int filesize);
+void serve_static(int fd, char *filename, int filesize, char *method);
 void get_filetype(char *filename, char *filetype);
-void serve_dynamic(int fd, char *filename, char *cgiargs);
+void serve_dynamic(int fd, char *filename, char *cgiargs, char *method);
 void clienterror(int fd, char *cause, char *errnum, char *shortmsg,
                  char *longmsg);
 void echo(int connfd);
@@ -105,14 +105,14 @@ void doit(int fd)
       clienterror(fd, filename, "403", "Forbidden", "Tiny couldn't read the file");
       return;
     }
-    serve_static(fd, filename, sbuf.st_size); // 정적 컨텐츠를 클라이언트에게 제공한다.
+    serve_static(fd, filename, sbuf.st_size, method); // 정적 컨텐츠를 클라이언트에게 제공한다.
   }
   else { // 동적 컨텐츠에 대한 것이라면
     if (!(S_ISREG(sbuf.st_mode)) || !(S_IXUSR & sbuf.st_mode)) { // 동적 컨텐츠가 실행 가능한지 검증
       clienterror(fd, filename, "403", "Forbidden", "Tiny couldn't run the CGI program");
       return;
     }
-    serve_dynamic(fd, filename, cgiargs); // 동적 컨텐츠를 제공
+    serve_dynamic(fd, filename, cgiargs, method); // 동적 컨텐츠를 제공
   }
 }
 /*
@@ -140,7 +140,7 @@ void clienterror(int fd, char *cause, char *errnum,
   Rio_writen(fd, buf, strlen(buf));
   sprintf(buf, "Content-length: %d\r\n\r\n", (int)strlen(body));
   Rio_writen(fd, buf, strlen(buf));
-  Rio_writen(fd, buf, strlen(body));
+  Rio_writen(fd, body, strlen(body));
 
 }
 
@@ -199,7 +199,7 @@ serve_static
 먼저 파일 이름의 접미어 부분을 검사해서 파일 타입을 결정하고 
 클라이언트에 응답 중과 응답 헤더를 보낸다.
 */
-void serve_static(int fd, char *filename, int filesize)
+void serve_static(int fd, char *filename, int filesize, char *method)
 {
   int srcfd;
   char *srcp, filetype[MAXLINE], buf[MAXBUF];
@@ -256,7 +256,7 @@ void get_filetype(char *filename, char *filetype)
 serve_dynamic
 동적 컨텐츠를 자식의 컨텍스트에서 실행할수있도록 해주는 함수이다.
 */
-void serve_dynamic(int fd, char *filename, char *cgiargs)
+void serve_dynamic(int fd, char *filename, char *cgiargs, char *method)
 {
   char buf[MAXLINE], *emptylist[] = { NULL };
 
@@ -267,6 +267,7 @@ void serve_dynamic(int fd, char *filename, char *cgiargs)
 
   if(Fork() == 0){ // 새로운 자식 프로세스를 fork함
     setenv("QUERY_STRING", cgiargs, 1);
+    setenv("REQUEST_METHOD", method, 1);
     Dup2(fd, STDOUT_FILENO);
     Execve(filename, emptylist, environ);
   }

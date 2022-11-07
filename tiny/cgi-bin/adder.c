@@ -12,11 +12,12 @@ int main() {
   if((buf = getenv("QUERY_STRING")) != NULL) {
     p = strchr(buf, '&');
     *p = '\0';
-    strcpy(arg1, buf);
-    strcpy(arg2, p+1);
-    n1 = atoi(arg1);
-    n2 = atoi(arg2);
-
+    // strcpy(arg1, buf);
+    // strcpy(arg2, p+1);
+    // n1 = atoi(arg1);
+    // n2 = atoi(arg2);
+    sscanf(buf, "n1=%d", &n1);
+    sscanf(p+1, "n2=%d", &n2);
   }
 
   sprintf(content, "QYERY_STRING=%s", buf);
