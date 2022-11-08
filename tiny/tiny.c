@@ -22,9 +22,7 @@ main(argc, argv)
 tiny 함수를 실행할떼 ./tiny 8000 이런식으로 실행한다.
 이때 단어의 수가 argc에 들어간다. 여기서는 argc는 2이다.
 argv는 배열이고 위의 예시를 통해 알아보면 
-argv[0] = ./tiny 
-argv[1] = 8000
-이렇게 된다.
+argv[0] = ./tiny argv[1] = 8000 이렇게 된다.
 */
 int main(int argc, char **argv) {
   int listenfd, connfd;
@@ -67,7 +65,9 @@ void echo(int connfd) {
 
 
 /*
- doit(fd) : 한 개의 HTTP 트랜잭션을 처리한다.
+ doit(fd)
+ 한 개의 HTTP 트랜잭션을 처리한다.
+ 클라이언트의 요청 라인을 확인해서 정적, 동적 컨텐츠를 확인하고 돌려준다.
 */
 void doit(int fd)
 {
@@ -166,7 +166,6 @@ void read_requesthdrs(rio_t *rp)
 parse_uri
 정적 컨텐츠를 위한 홈 디렉토리를 설정하고(tiny에서는 홈 디렉토리가 자신의 현재 디렉토리로 설정됨)
 실행파일의 홈디렉토리를 설정한다(tiny에서는 /cgi-bin이 홈 디렉토리로 설정됨)
-
 */
 int parse_uri(char *uri, char *filename, char *cgiargs)
 {
