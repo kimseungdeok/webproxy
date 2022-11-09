@@ -21,6 +21,7 @@ void doit(int fd);
 void make_header(char *header, char *hostname, char *path, rio_t *rio);
 int parse_uri(char *uri, char *hostname, char *port, char *filename);
 
+void *thread(void *vargp);
 
 /*
 main(argc, argv)
@@ -31,11 +32,12 @@ argv[0] = ./tiny argv[1] = 8000 이렇게 된다.
 */
 int main(int argc, char **argv) {
   
-  int listenfd, connfd;
+  int listenfd, *connfd;
   char hostname[MAXLINE], port[MAXLINE];
   socklen_t clientlen;
-
   struct sockaddr_storage clientaddr;
+  
+  pthread_t tid;
 
   /* Check command line args */
   if (argc != 2) {
@@ -49,14 +51,22 @@ int main(int argc, char **argv) {
     connfd = Accept(listenfd, (SA *)&clientaddr,&clientlen);  // 연결 요청 접수
     Getnameinfo((SA *)&clientaddr, clientlen, hostname, MAXLINE, port, MAXLINE, 0);
     printf("Accepted connection from (%s, %s)\n", hostname, port);
-    doit(connfd);   // 트랜잭션 수행
-    Close(connfd);  // 자신 쪽의 연결 끝을 닫음
+
+    Pthread_create(&tid, NULL, thread, connfd);
+    // doit(connfd);   // 트랜잭션 수행
+    // Close(connfd);  // 자신 쪽의 연결 끝을 닫음
   }
-  print("%s", user_agent_hdr);
+  printf("%s", user_agent_hdr);
   return 0;
 }
 
-
+void *thread(void *vargp)
+{
+  int connfd = ((int)vargp);
+  Pthread_detach(pthread_self());
+  doit(connfd);
+  Close(connfd);
+}
 
 /*
  doit(fd)
